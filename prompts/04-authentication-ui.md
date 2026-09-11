@@ -9,3 +9,5 @@ When the main Sign Up or Sign In button is pressed, show a verification modal sa
 The code should be 6 digits, use the number pad, keep the modal above the keyboard, and automatically navigate to the home route (/) when the last digit is entered.
 
 @prompt_material/03-auth-screen.png
+@assets/images/mascot-auth.png
+@assets/images/leaves-logo.png
