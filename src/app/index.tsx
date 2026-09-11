@@ -1,12 +1,24 @@
 import React from "react";
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Link } from "expo-router";
+import { Redirect } from "expo-router";
+import { useAuth, useUser } from "@clerk/expo";
 import { images } from "@/constants/images";
 import { colors } from "@/theme/colors";
 import { typography } from "@/theme/typography";
 
 export default function DesignSystemScreen() {
+  const { isLoaded, isSignedIn, signOut } = useAuth();
+  const { user } = useUser();
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn) {
+    return <Redirect href="/onboarding" />;
+  }
+
   const primaryColors = [
     { name: "LINGUA PURPLE", hex: colors.primary.purple },
     { name: "LINGUA DEEP PURPLE", hex: colors.primary.deepPurple },
@@ -103,12 +115,9 @@ export default function DesignSystemScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ONBOARDING NAVIGATION LINK */}
-        <Link href="./onboarding" asChild>
-          <TouchableOpacity
-            activeOpacity={0.85}
-            className="bg-[#214332] rounded-3xl p-5 mb-6 flex-row items-center justify-between shadow-sm"
-          >
+        {/* AUTH USER PROFILE & SIGN OUT BANNER */}
+        <View className="bg-[#214332] rounded-3xl p-5 mb-6 shadow-sm">
+          <View className="flex-row items-center justify-between">
             <View className="flex-row items-center flex-1 mr-3">
               <View className="w-12 h-12 rounded-2xl bg-white/10 items-center justify-center mr-3.5">
                 <Image
@@ -119,18 +128,29 @@ export default function DesignSystemScreen() {
               </View>
               <View className="flex-1">
                 <Text className="text-white font-poppins-semibold text-base leading-tight">
-                  Open Onboarding Screen
+                  {user?.firstName
+                    ? `Hi, ${user.firstName}`
+                    : user?.primaryEmailAddress?.emailAddress?.split("@")[0] || "Welcome"}
                 </Text>
-                <Text className="text-white/70 font-poppins-regular text-xs mt-1">
-                  Sanjeevni • AI Health Companion
+                <Text
+                  className="text-white/70 font-poppins-regular text-xs mt-1"
+                  numberOfLines={1}
+                >
+                  {user?.primaryEmailAddress?.emailAddress || "Signed in with Clerk"}
                 </Text>
               </View>
             </View>
-            <View className="w-8 h-8 rounded-full bg-white/20 items-center justify-center">
-              <Text className="text-white text-base font-light">›</Text>
-            </View>
-          </TouchableOpacity>
-        </Link>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => signOut()}
+              className="bg-white/20 px-3.5 py-2 rounded-xl"
+            >
+              <Text className="text-white font-poppins-semibold text-xs">
+                Sign Out
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
         {/* BRAND SECTION */}
         <View className="bg-white rounded-3xl p-6 mb-6 border border-gray-100 shadow-sm">
           <Text className="text-lingua-purple font-poppins-bold text-xs uppercase tracking-widest mb-4">
