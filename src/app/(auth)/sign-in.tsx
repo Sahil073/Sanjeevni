@@ -6,20 +6,105 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { useAuth, useSignIn, useSSO } from "@clerk/expo";
 import { images } from "@/constants/images";
-import { SocialAuthButton } from "@/components/auth/SocialAuthButton";
+import { SocialAuthButton, SocialProvider } from "@/components/auth/SocialAuthButton";
 import { VerificationModal } from "@/components/auth/VerificationModal";
 
 export default function SignInScreen() {
   const router = useRouter();
-  const [email, setEmail] = useState("alex@gmail.com");
+  const { isLoaded } = useAuth();
+  const { signIn } = useSignIn();
+  const { startSSOFlow } = useSSO();
+
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
 
-  const handleSignIn = () => {
-    setShowVerificationModal(true);
+  const handleSignIn = async () => {
+    if (!isLoaded) return;
+    if (!email.trim()) {
+      setErrorMsg("Please enter your email address.");
+      return;
+    }
+
+    setLoading(true);
+    setErrorMsg(null);
+
+    try {
+      if (signIn.status) {
+        await signIn.reset();
+      }
+
+      const { error } = await signIn.emailCode.sendCode({
+        emailAddress: email.trim(),
+      });
+
+      if (error) {
+        setErrorMsg(error.message || "Sign in failed. Please check your email and try again.");
+        return;
+      }
+
+      setShowVerificationModal(true);
+    } catch (err: unknown) {
+      const clerkError = err as { message?: string };
+      setErrorMsg(clerkError?.message || "Sign in failed. Please check your email and try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async (code: string) => {
+    const { error } = await signIn.emailCode.verifyCode({ code });
+    if (error) {
+      throw new Error(error.message || "Verification code is invalid or expired.");
+    }
+
+    if (signIn.status === "complete") {
+      const { error: finalizeError } = await signIn.finalize();
+      if (finalizeError) {
+        throw new Error(finalizeError.message || "Failed to finalize session.");
+      }
+      setShowVerificationModal(false);
+      router.replace("/");
+    } else {
+      throw new Error("Verification incomplete. Please check the code and try again.");
+    }
+  };
+
+  const handleResendCode = async () => {
+    const { error } = await signIn.emailCode.sendCode();
+    if (error) {
+      throw new Error(error.message || "Failed to resend code.");
+    }
+  };
+
+  const handleSocialAuth = async (provider: SocialProvider) => {
+    const strategyMap: Record<SocialProvider, "oauth_google" | "oauth_facebook" | "oauth_apple"> = {
+      google: "oauth_google",
+      facebook: "oauth_facebook",
+      apple: "oauth_apple",
+    };
+
+    try {
+      setErrorMsg(null);
+      const strategy = strategyMap[provider];
+      const { createdSessionId, setActive: setSSOActive } = await startSSOFlow({ strategy });
+
+      if (createdSessionId && setSSOActive) {
+        await setSSOActive({ session: createdSessionId });
+        router.replace("/");
+      }
+    } catch (err: unknown) {
+      const clerkError = err as { errors?: { message?: string }[]; message?: string };
+      const msg = clerkError?.errors?.[0]?.message || clerkError?.message || "Social sign in failed. Please try again.";
+      setErrorMsg(msg);
+    }
   };
 
   return (
@@ -84,6 +169,15 @@ export default function SignInScreen() {
           </View>
         </View>
 
+        {/* Error Banner */}
+        {errorMsg && (
+          <View className="bg-red-50 border border-red-200 rounded-2xl p-3 mb-3">
+            <Text className="font-poppins-regular text-xs text-red-700 text-center">
+              {errorMsg}
+            </Text>
+          </View>
+        )}
+
         {/* Form Fields: Email Only (No Password) */}
         <View className="w-full mt-2">
           {/* Email Input */}
@@ -102,6 +196,7 @@ export default function SignInScreen() {
                 placeholderTextColor="#A0AFA7"
                 keyboardType="email-address"
                 autoCapitalize="none"
+                autoCorrect={false}
                 className="font-poppins-medium text-[15px] text-[#111C16] p-0 m-0"
               />
             </View>
@@ -111,16 +206,23 @@ export default function SignInScreen() {
           <TouchableOpacity
             activeOpacity={0.88}
             onPress={handleSignIn}
+            disabled={loading}
             className="w-full py-5 px-8 min-h-[66px] bg-[#214332] rounded-full flex-row items-center justify-center relative shadow-md shadow-[#214332]/30 mb-6"
           >
-            <Text className="font-poppins-semibold text-white text-[18px] tracking-wide">
-              Sign In
-            </Text>
-            <View className="absolute right-7 items-center justify-center">
-              <Text className="text-white text-2xl font-light leading-none">
-                ›
-              </Text>
-            </View>
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <>
+                <Text className="font-poppins-semibold text-white text-[18px] tracking-wide">
+                  Sign In
+                </Text>
+                <View className="absolute right-7 items-center justify-center">
+                  <Text className="text-white text-2xl font-light leading-none">
+                    ›
+                  </Text>
+                </View>
+              </>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -137,15 +239,15 @@ export default function SignInScreen() {
         <View className="w-full mb-4">
           <SocialAuthButton
             provider="google"
-            onPress={() => setShowVerificationModal(true)}
+            onPress={() => handleSocialAuth("google")}
           />
           <SocialAuthButton
             provider="facebook"
-            onPress={() => setShowVerificationModal(true)}
+            onPress={() => handleSocialAuth("facebook")}
           />
           <SocialAuthButton
             provider="apple"
-            onPress={() => setShowVerificationModal(true)}
+            onPress={() => handleSocialAuth("apple")}
           />
         </View>
 
@@ -176,6 +278,8 @@ export default function SignInScreen() {
           visible={showVerificationModal}
           onClose={() => setShowVerificationModal(false)}
           email={email}
+          onVerify={handleVerifyCode}
+          onResend={handleResendCode}
         />
       </ScrollView>
     </SafeAreaView>
