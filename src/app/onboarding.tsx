@@ -4,9 +4,12 @@ import { Redirect, useRouter } from "expo-router";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useUserProfile } from "@/store/userProfileStore";
+
 export default function OnboardingScreen() {
   const router = useRouter();
   const { isLoaded, isSignedIn } = useAuth();
+  const { profile } = useUserProfile();
 
   const handleGetStarted = () => {
     router.push("/(auth)/sign-up");
@@ -17,7 +20,10 @@ export default function OnboardingScreen() {
   }
 
   if (isSignedIn) {
-    return <Redirect href="/" />;
+    if (!profile.isCompleted) {
+      return <Redirect href="/onboarding-health" />;
+    }
+    return <Redirect href="/(tabs)" />;
   }
 
   return (

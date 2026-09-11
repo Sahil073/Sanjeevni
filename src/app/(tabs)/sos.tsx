@@ -7,8 +7,10 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useUserProfile } from "@/store/userProfileStore";
 
 export default function SOSScreen() {
+  const { profile } = useUserProfile();
   const [sosTriggered, setSosTriggered] = useState(false);
 
   const handleTriggerSOS = () => {
@@ -124,10 +126,10 @@ export default function SOSScreen() {
           <View className="flex-row items-center justify-between py-2 border-b border-[#F2F6F3]">
             <View>
               <Text className="font-poppins-semibold text-xs text-[#101C16]">
-                Dr. Sharma (Physician)
+                {profile.emergencyContactName || "Dr. Sharma (Physician)"}
               </Text>
               <Text className="font-poppins-regular text-[11px] text-[#7A8E82]">
-                +91 98765 43210
+                {profile.emergencyContactPhone || "+91 98765 43210"}
               </Text>
             </View>
             <Text className="text-base">📞</Text>

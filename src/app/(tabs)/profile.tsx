@@ -1,13 +1,29 @@
-import React from "react";
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import React, { useState } from "react";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth, useUser } from "@clerk/expo";
 import { useRouter } from "expo-router";
+import { useUserProfile } from "@/store/userProfileStore";
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { signOut } = useAuth();
   const { user } = useUser();
+  const { profile } = useUserProfile();
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
+  const handleSignOut = async () => {
+    if (isSigningOut) return;
+    setIsSigningOut(true);
+    try {
+      await signOut();
+    } catch (err) {
+      console.warn("Sign out error:", err);
+    } finally {
+      setIsSigningOut(false);
+      router.replace("/onboarding");
+    }
+  };
 
   const fullName = user?.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "Sanjeevni User";
   const email = user?.emailAddresses?.[0]?.emailAddress || "user@sanjeevni.health";
@@ -91,30 +107,92 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Medical ID Summary */}
+        {/* Health Profile Card (Matching Onboarding Questions) */}
         <View className="bg-white rounded-2xl p-4 mb-5 border border-[#E9EFEA] shadow-sm">
-          <Text className="font-poppins-bold text-sm text-[#101C16] mb-2.5">
-            Emergency Medical Information
-          </Text>
+          <View className="flex-row items-center justify-between mb-3">
+            <Text className="font-poppins-bold text-sm text-[#101C16]">
+              Personal & Medical Profile
+            </Text>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => router.push("/onboarding-health?from=profile" as any)}
+              className="py-1 px-2.5 rounded-lg bg-[#EBF5EE]"
+            >
+              <Text className="font-poppins-semibold text-[11px] text-[#214332]">
+                Edit Profile ›
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View className="flex-row justify-between py-1.5 border-b border-[#F2F6F3]">
+            <Text className="font-poppins-medium text-xs text-[#55695E]">Age</Text>
+            <Text className="font-poppins-semibold text-xs text-[#101C16]">
+              {profile.age}
+            </Text>
+          </View>
+
+          <View className="flex-row justify-between py-1.5 border-b border-[#F2F6F3]">
+            <Text className="font-poppins-medium text-xs text-[#55695E]">Gender</Text>
+            <Text className="font-poppins-semibold text-xs text-[#101C16]">
+              {profile.gender}
+            </Text>
+          </View>
+
+          <View className="flex-row justify-between py-1.5 border-b border-[#F2F6F3]">
+            <Text className="font-poppins-medium text-xs text-[#55695E]">Height</Text>
+            <Text className="font-poppins-semibold text-xs text-[#101C16]">
+              {profile.heightCm} cm
+            </Text>
+          </View>
+
+          <View className="flex-row justify-between py-1.5 border-b border-[#F2F6F3]">
+            <Text className="font-poppins-medium text-xs text-[#55695E]">Weight</Text>
+            <Text className="font-poppins-semibold text-xs text-[#101C16]">
+              {profile.weightKg} kg
+            </Text>
+          </View>
+
           <View className="flex-row justify-between py-1.5 border-b border-[#F2F6F3]">
             <Text className="font-poppins-medium text-xs text-[#55695E]">Blood Group</Text>
-            <Text className="font-poppins-bold text-xs text-[#101C16]">O Positive (O+)</Text>
+            <Text className="font-poppins-bold text-xs text-[#101C16]">
+              {profile.bloodGroup}
+            </Text>
           </View>
+
+          <View className="flex-row justify-between py-1.5 border-b border-[#F2F6F3]">
+            <Text className="font-poppins-medium text-xs text-[#55695E]">Medical Condition</Text>
+            <Text className="font-poppins-semibold text-xs text-[#101C16]">
+              {profile.medicalCondition}
+            </Text>
+          </View>
+
           <View className="flex-row justify-between py-1.5">
-            <Text className="font-poppins-medium text-xs text-[#55695E]">Known Allergies</Text>
-            <Text className="font-poppins-semibold text-xs text-[#101C16]">None</Text>
+            <Text className="font-poppins-medium text-xs text-[#55695E]">Emergency Contact</Text>
+            <View className="items-end">
+              <Text className="font-poppins-semibold text-xs text-[#101C16]">
+                {profile.emergencyContactName || "Dr. Sharma (Guardian)"}
+              </Text>
+              <Text className="font-poppins-regular text-[11px] text-[#7A8E82]">
+                {profile.emergencyContactPhone || "+91 98765 43210"}
+              </Text>
+            </View>
           </View>
         </View>
 
         {/* Sign Out Button */}
         <TouchableOpacity
           activeOpacity={0.8}
-          onPress={() => signOut()}
+          disabled={isSigningOut}
+          onPress={handleSignOut}
           className="w-full py-3.5 rounded-2xl bg-red-50 border border-red-200 items-center justify-center mb-6"
         >
-          <Text className="font-poppins-semibold text-sm text-[#DC2626]">
-            Sign Out
-          </Text>
+          {isSigningOut ? (
+            <ActivityIndicator size="small" color="#DC2626" />
+          ) : (
+            <Text className="font-poppins-semibold text-sm text-[#DC2626]">
+              Sign Out
+            </Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

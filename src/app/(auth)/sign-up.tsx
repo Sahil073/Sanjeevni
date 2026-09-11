@@ -81,7 +81,7 @@ export default function SignUpScreen() {
         throw new Error(finalizeError.message || "Failed to finalize sign up session.");
       }
       setShowVerificationModal(false);
-      router.replace("/connect-device");
+      router.replace("/onboarding-health");
     } else {
       throw new Error("Verification incomplete. Please check the code and try again.");
     }
@@ -108,7 +108,7 @@ export default function SignUpScreen() {
 
       if (createdSessionId && setSSOActive) {
         await setSSOActive({ session: createdSessionId });
-        router.replace("/connect-device");
+        router.replace("/onboarding-health");
       }
     } catch (err: unknown) {
       const clerkError = err as { errors?: { message?: string }[]; message?: string };
