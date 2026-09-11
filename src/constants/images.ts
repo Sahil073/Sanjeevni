@@ -9,6 +9,7 @@ import treasure from "@/assets/images/treasure.png";
 import icon from "@/assets/images/icon.png";
 import splashIcon from "@/assets/images/splash-icon.png";
 import favicon from "@/assets/images/favicon.png";
+import tshirt from "@/assets/images/tshirt.png";
 
 export const images = {
   mascotLogo,
@@ -22,6 +23,7 @@ export const images = {
   icon,
   splashIcon,
   favicon,
+  tshirt,
 } as const;
 
 export type ImageAssetKey = keyof typeof images;
