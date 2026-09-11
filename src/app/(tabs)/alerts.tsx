@@ -1,176 +1,150 @@
 import React, { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  AlertRecord,
+  AlertSeverity,
+  AlertIconType,
+  INITIAL_ALERTS,
+} from "@/data/mockAlertsData";
+import {
+  CriticalShieldIcon,
+  WarningTriangleIcon,
+  InfoCircleIcon,
+  HeartPulseAlertIcon,
+  Spo2AlertIcon,
+  TempAlertIcon,
+  AqiAlertIcon,
+  HumidityAlertIcon,
+  FallAlertIcon,
+  BatteryAlertIcon,
+  SyncAlertIcon,
+  CheckCircleAlertIcon,
+  ShieldSafeIcon,
+} from "@/components/alerts/AlertIcons";
 
-interface AlertItem {
-  id: string;
-  type: "critical" | "warning" | "info";
-  title: string;
-  description: string;
-  time: string;
-  icon: string;
-  category: "environmental" | "vitals" | "device";
+/**
+ * Returns a simple SVG icon for the alert
+ */
+function getAlertIcon(iconType: AlertIconType, severity: AlertSeverity, size = 18) {
+  const iconColor =
+    severity === "critical"
+      ? "#EF4444"
+      : severity === "warning"
+      ? "#F59E0B"
+      : "#3B82F6";
+
+  switch (iconType) {
+    case "heart":
+      return <HeartPulseAlertIcon size={size} color={iconColor} />;
+    case "spo2":
+      return <Spo2AlertIcon size={size} color={iconColor} />;
+    case "temp":
+      return <TempAlertIcon size={size} color={iconColor} />;
+    case "aqi":
+      return <AqiAlertIcon size={size} color={iconColor} />;
+    case "humidity":
+      return <HumidityAlertIcon size={size} color={iconColor} />;
+    case "fall":
+      return <FallAlertIcon size={size} color={iconColor} />;
+    case "battery":
+      return <BatteryAlertIcon size={size} color={iconColor} />;
+    case "sync":
+      return <SyncAlertIcon size={size} color={iconColor} />;
+    case "check":
+      return <CheckCircleAlertIcon size={size} color={iconColor} />;
+    default:
+      if (severity === "critical") {
+        return <CriticalShieldIcon size={size} color={iconColor} />;
+      }
+      if (severity === "warning") {
+        return <WarningTriangleIcon size={size} color={iconColor} />;
+      }
+      return <InfoCircleIcon size={size} color={iconColor} />;
+  }
 }
 
-const mockAlerts: AlertItem[] = [
-  {
-    id: "1",
-    type: "warning",
-    title: "High Heat Index Detected",
-    description: "Ambient heat index reached 39°C. Increase hydration and seek shade to prevent heat stroke.",
-    time: "10 mins ago",
-    icon: "☀️",
-    category: "environmental",
-  },
-  {
-    id: "2",
-    type: "info",
-    title: "Moderate Air Quality (AQI 112)",
-    description: "Particulate matter levels are elevated. Sensitive individuals should consider wearing a mask outdoors.",
-    time: "45 mins ago",
-    icon: "🌫️",
-    category: "environmental",
-  },
-  {
-    id: "3",
-    type: "critical",
-    title: "Elevated Heart Rate Spike",
-    description: "Heart rate exceeded 135 BPM while stationary. Please rest and monitor your respiration.",
-    time: "2 hours ago",
-    icon: "❤️",
-    category: "vitals",
-  },
-  {
-    id: "4",
-    type: "info",
-    title: "Sanjeevni T-Shirt Battery",
-    description: "Wearable module battery level is at 25%. Connect magnetic charging dock tonight.",
-    time: "Yesterday",
-    icon: "🔋",
-    category: "device",
-  },
-];
-
 export default function AlertsScreen() {
-  const [activeFilter, setActiveFilter] = useState<"all" | "environmental" | "vitals" | "device">("all");
-
-  const filteredAlerts = mockAlerts.filter((alert) => {
-    if (activeFilter === "all") return true;
-    return alert.category === activeFilter;
-  });
+  const [alerts] = useState<AlertRecord[]>(INITIAL_ALERTS);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#F7FAF8" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#F7F5F0" }}>
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 110, paddingTop: 12 }}
+        contentContainerStyle={{ paddingBottom: 110, paddingTop: 16 }}
         showsVerticalScrollIndicator={false}
         className="px-5"
       >
-        {/* Header */}
-        <View className="mb-4">
-          <Text className="font-poppins-bold text-[28px] text-[#101C16]">
-            Alerts & Safety
+        {/* Simple Minimal Header */}
+        <View className="mb-5">
+          <Text className="font-poppins-bold text-[28px] text-[#161616]">
+            Alerts
           </Text>
-          <Text className="font-poppins-regular text-sm text-[#55695E] mt-0.5">
-            Real-time environmental and vital notifications
+          <Text className="font-poppins-regular text-xs text-[#8A9A90] mt-0.5">
+            Real-time health & safety stream
           </Text>
         </View>
 
-        {/* Filter Chips */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          className="flex-row mb-5"
-          contentContainerStyle={{ gap: 8 }}
-        >
-          {(["all", "environmental", "vitals", "device"] as const).map((filter) => {
-            const isSelected = activeFilter === filter;
-            const labels = {
-              all: "All Alerts",
-              environmental: "Environmental",
-              vitals: "Vitals",
-              device: "Wearable",
-            };
+        {/* Empty State */}
+        {alerts.length === 0 ? (
+          <View className="bg-white rounded-2xl p-8 items-center justify-center border border-[#EDE9E2] mt-6">
+            <View className="w-12 h-12 rounded-full bg-emerald-50 items-center justify-center mb-3">
+              <ShieldSafeIcon size={24} color="#16A34A" />
+            </View>
+            <Text className="font-poppins-medium text-sm text-[#161616]">
+              No Alerts
+            </Text>
+            <Text className="font-poppins-regular text-xs text-[#8A9A90] mt-1 text-center">
+              All health and environmental vitals are within normal range.
+            </Text>
+          </View>
+        ) : (
+          /* Simple, Clean Alert Cards without any dots */
+          <View className="space-y-2.5">
+            {alerts.map((alert) => {
+              const isCritical = alert.severity === "critical";
+              const isWarning = alert.severity === "warning";
 
-            return (
-              <TouchableOpacity
-                key={filter}
-                activeOpacity={0.75}
-                onPress={() => setActiveFilter(filter)}
-                className={`px-4 py-2 rounded-full border ${
-                  isSelected
-                    ? "bg-[#214332] border-[#214332]"
-                    : "bg-white border-[#E2E8E4]"
-                }`}
-              >
-                <Text
-                  className={`font-poppins-medium text-xs ${
-                    isSelected ? "text-white" : "text-[#55695E]"
-                  }`}
+              const iconBg = isCritical
+                ? "bg-red-50"
+                : isWarning
+                ? "bg-amber-50"
+                : "bg-blue-50";
+
+              return (
+                <TouchableOpacity
+                  key={alert.id}
+                  activeOpacity={0.7}
+                  className="bg-white rounded-2xl p-3.5 border border-[#EDE9E2] mb-2.5 flex-row items-center justify-between shadow-xs"
                 >
-                  {labels[filter]}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-
-        {/* Alerts List */}
-        <View className="space-y-3">
-          {filteredAlerts.map((alert) => {
-            return (
-              <View
-                key={alert.id}
-                className="bg-white rounded-2xl p-4 border border-[#E9EFEA] shadow-sm mb-3"
-              >
-                <View className="flex-row items-center justify-between mb-2">
-                  <View className="flex-row items-center">
-                    <Text className="text-xl mr-2">{alert.icon}</Text>
-                    <Text className="font-poppins-bold text-[15px] text-[#101C16]">
-                      {alert.title}
-                    </Text>
-                  </View>
-                  <View
-                    className={`px-2 py-0.5 rounded-full border ${
-                      alert.type === "critical"
-                        ? "bg-red-50 border-red-200"
-                        : alert.type === "warning"
-                        ? "bg-amber-50 border-amber-200"
-                        : "bg-blue-50 border-blue-200"
-                    }`}
-                  >
-                    <Text
-                      className={`font-poppins-semibold text-[10px] uppercase ${
-                        alert.type === "critical"
-                          ? "text-red-600"
-                          : alert.type === "warning"
-                          ? "text-amber-700"
-                          : "text-blue-700"
-                      }`}
+                  {/* Left: Icon & Text */}
+                  <View className="flex-row items-center flex-1 mr-3">
+                    <View
+                      className={`w-10 h-10 rounded-full ${iconBg} items-center justify-center mr-3`}
                     >
-                      {alert.type}
+                      {getAlertIcon(alert.iconType, alert.severity, 18)}
+                    </View>
+
+                    <View className="flex-1">
+                      <Text className="font-poppins-medium text-sm text-[#161616]">
+                        {alert.title}
+                      </Text>
+                      <Text className="font-poppins-regular text-xs text-[#6B7280] mt-0.5">
+                        {alert.message}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Right: Timestamp only (No dots) */}
+                  <View className="items-end justify-center pl-1">
+                    <Text className="font-poppins-regular text-[11px] text-[#9E9B94]">
+                      {alert.timestamp}
                     </Text>
                   </View>
-                </View>
-
-                <Text className="font-poppins-regular text-[13px] text-[#4A6455] leading-relaxed mb-2.5">
-                  {alert.description}
-                </Text>
-
-                <View className="flex-row justify-between items-center pt-2 border-t border-[#F2F6F3]">
-                  <Text className="font-poppins-medium text-[11px] text-[#8A9A90]">
-                    {alert.time}
-                  </Text>
-                  <TouchableOpacity activeOpacity={0.7}>
-                    <Text className="font-poppins-semibold text-xs text-[#214332]">
-                      View Details ›
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            );
-          })}
-        </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
